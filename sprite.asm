@@ -30,7 +30,12 @@
 	; ---------------------------------------------------------------------------
 
 .RSX_GET                  ; Mode 0: 1 byte = 2 pixels (4 bytes = 8px) (32 bytes = 8x8, 64 = 8x16)
-	ld de, spritespace    ; put DE at start of sprite memory
+	cp 1				  ; Have we got 1 parameter (sprite number)
+	jp nz, ERRORCONDITION ; Exit if not
+	ld b, (IX+0)          ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
+	call CALC_SPRITE_MEM  ; calc sprite location
+	
+	ld de, (spritememloc) ; put DE at start of sprite memory
 	ld hl, &c000          ; start position of sprite - should be provided by something else
 
 	push hl               ; remember start position
@@ -71,7 +76,12 @@
 	; ---------------------------------------------------------------------------
 
 .RSX_PUT
-	ld hl, spritespace    ; put HL at start of sprite memory
+	cp 1				  ; Have we got 1 parameter (sprite number)
+	jp nz, ERRORCONDITION ; Exit if not
+	ld b, (IX+0)          ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
+	call CALC_SPRITE_MEM  ; calc sprite location
+	
+	ld hl, (spritememloc) ; put HL at start of sprite memory
 	ld de, &c000          ; put DE at start position of screen memory
 
 	push de               ; remember start video position
@@ -114,7 +124,44 @@
 	ldi
 	ret
 
+	; ---------------------------------------------------------------------------	
+
+.ERRORCONDITION
+	ld hl, errortext
+.errorcondition_text_loop
+	ld a, (hl)
+	or a
+	ret z
+	call &bb5a
+	inc hl
+	jr errorcondition_text_loop
+	
+.errortext
+	defb "Incorrect parameter count", 0
+	
 	; ---------------------------------------------------------------------------
 
+.spritememloc
+	defs 4            ; Used as storage for where a sprite lives...
+
+.CALC_SPRITE_MEM      ; sprite number in B (1-255) / returns via .spritememloc
+	push hl
+	push de
+	ld hl, spritespace
+	ld de, 64
+	
+.calc_add_loop_work
+	djnz calc_add_loop ; If not 0, add 64 bytes and move on
+	ld (spritememloc), hl
+	pop de
+	pop hl
+	ret
+	
+.calc_add_loop
+	add hl, de        ; each sprite is 64 bytes
+	jp calc_add_loop_work
+
+	; ---------------------------------------------------------------------------
+	
 .spritespace          ; blank space for sprites
-	defs 100
+	defs 4
