@@ -2,8 +2,11 @@
 	;; Uses RSXs
 
 
-	org &8000          ; will change later
-
+	org &8000
+	
+	; -- INITIALISE LOOKUP TABLE BEFORE INSTALLING RSX
+	call BUILD_SCREEN_LINE_LOOKUP
+	
 	; -- INSTALL RSXs
 	ld hl,rsx_work_space	;address of a 4 byte workspace useable by Kernel
 	ld bc,jump_table		;address of command name table and routine handlers
@@ -208,6 +211,39 @@
 	pop hl
 	ret
 	
+	; ---------------------------------------------------------------------------
+	
+.BUILD_SCREEN_LINE_LOOKUP
+	ld a, 25				; number of blocks
+	ld hl, &c000			; start of screen memory
+	ld ix, spritelinelookup	; start of lookup table
+.build_screen_block
+	push hl					; remember start of this block
+	ld b, 8					; do this block of 8 lines
+.build_screen_eight_work
+	ld (ix+0), l			; insert into lookup table
+	ld (ix+1), h
+	inc ix					; move in lookup table
+	inc ix
+	djnz build_screen_next_line ; decrease B, if not another line, try another block
+	jp build_screen_next_block
+.build_screen_next_line
+	push bc
+	ld bc, &800
+	add hl, bc				; go to next pixel line
+	pop bc
+	jr build_screen_eight_work
+.build_screen_next_block
+	pop hl					; get start of block back
+	dec a
+	cp 0
+	ret z
+	ld bc, &50
+	add hl, bc				; go to start of next block
+	jr build_screen_block
+
+.spritelinelookup
+	defs 400			; 200 lines x 16 bit address
 	; ---------------------------------------------------------------------------
 	
 .spritespace          ; blank space for sprites
