@@ -76,13 +76,23 @@
 	; ---------------------------------------------------------------------------
 
 .RSX_PUT
-	cp 1				  ; Have we got 1 parameter (sprite number)
+	cp 3				  ; Have we got 3 parameters (sprite number, x char, y char)
 	jp nz, ERRORCONDITION ; Exit if not
-	ld b, (IX+0)          ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
-	call CALC_SPRITE_MEM  ; calc sprite location
+	
+	ld L, (IX+0)
+	ld H, (IX+1)
+	ld (sprite_user_y), HL
+	
+	ld L, (IX+2)
+	ld H, (IX+3)
+	ld (sprite_user_x), HL
+	
+	ld b, (IX+4)          ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
+	call CALC_SPRITE_MEM  ; calc sprite data location
+	call CALC_SPRITE_SCREEN ; calc sprite screen location
 	
 	ld hl, (spritememloc) ; put HL at start of sprite memory
-	ld de, &c000          ; put DE at start position of screen memory
+	ld de, (spritescreenmemloc) ; put DE at start position of screen memory
 
 	push de               ; remember start video position
 
@@ -142,7 +152,7 @@
 	; ---------------------------------------------------------------------------
 
 .spritememloc
-	defs 4            ; Used as storage for where a sprite lives...
+	defs 2            ; Used as storage for where a sprite lives...
 
 .CALC_SPRITE_MEM      ; sprite number in B (1-255) / returns via .spritememloc
 	push hl
@@ -161,6 +171,49 @@
 	add hl, de        ; each sprite is 64 bytes
 	jp calc_add_loop_work
 
+	; ---------------------------------------------------------------------------
+.spritescreenmemloc   ; output for where sprite will start
+	defs 2
+.sprite_user_x        ; input for x position (characters)
+	defs 2
+.sprite_user_y        ; input for y position (characters)
+	defs 2
+	
+.CALC_SPRITE_SCREEN
+	push hl
+	ld hl, &c000           ; first byte of screen ram
+	ld a, (sprite_user_y)  ; 1-24
+	dec a
+	cp 0                   ; if zero, no calc required
+	jr z, calc_sprite_x
+	ld b, a 
+	
+.calc_sprite_y_work
+	push bc
+	ld bc, &50             ; next line
+	add hl, bc
+	pop bc
+	djnz calc_sprite_y_work     ; dec b, goto x loop if not zero
+	
+.calc_sprite_x
+	ld a, (sprite_user_x)
+	dec a
+	cp 0
+	jr z, calc_sprite_pos_done
+	ld b, a ; 1-20
+	
+.calc_sprite_x_work
+	push bc
+	ld bc, &4             ; next character (8 pixels, 4 bytes)
+	add hl, bc
+	pop bc
+	djnz calc_sprite_x_work ; dec B, if not zero, go again!
+	
+.calc_sprite_pos_done
+	ld (spritescreenmemloc), hl
+	pop hl
+	ret
+	
 	; ---------------------------------------------------------------------------
 	
 .spritespace          ; blank space for sprites
