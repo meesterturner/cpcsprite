@@ -177,39 +177,28 @@
 	; ---------------------------------------------------------------------------
 .spritescreenmemloc   ; output for where sprite will start
 	defs 2
-.sprite_user_x        ; input for x position (characters)
+.sprite_user_x        ; input for x position (pixels / 2 [1-80])
 	defs 2
-.sprite_user_y        ; input for y position (characters)
+.sprite_user_y        ; input for y position (pixels [1-200])
 	defs 2
 	
-.CALC_SPRITE_SCREEN
-	push hl
-	ld hl, &c000           ; first byte of screen ram
-	ld a, (sprite_user_y)  ; 1-24
-	ld bc, &50 ; next line
+.CALC_SPRITE_SCREEN			; With help from http://cpctech.cpc-live.com/docs/scraddr.html
+	ld hl, (sprite_user_y)  ; 1-200
+	dec hl					; decrease by one
+	add hl, hl              ; multiply by two to get the correct offset in the lookup
+	ld de, spritelinelookup ; add in position of the lookup table
+	add hl, de
 	
-.calc_sprite_y_work
-	dec a
-	cp 0                   ; if zero, no calc required
-	jr z, calc_sprite_x    ; ... so go to the x
-	add hl, bc
-	jp calc_sprite_y_work     ; goto top of loop
+	ld a,(hl)				; Read from table (first byte into a,
+	inc hl					; second into h, then a into l)
+	ld h,(hl)
+	ld l,a	
 	
-.calc_sprite_x
-	ld a, (sprite_user_x)
-	ld bc, &4             ; next character (8 pixels, 4 bytes)
-	
-.calc_sprite_x_work
-	dec a
-	cp 0
-	jr z, calc_sprite_pos_done
-	add hl, bc
-	jp calc_sprite_x_work ; go again!
-	
-.calc_sprite_pos_done
-	ld (spritescreenmemloc), hl
-	pop hl
-	ret
+	ld de, (sprite_user_x)	; add in x position(1-80)-1
+	add hl, de
+	dec hl
+	ld (spritescreenmemloc), hl ; return it through the memory location
+	ret 
 	
 	; ---------------------------------------------------------------------------
 	
