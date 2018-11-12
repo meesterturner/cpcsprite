@@ -183,31 +183,25 @@
 	push hl
 	ld hl, &c000           ; first byte of screen ram
 	ld a, (sprite_user_y)  ; 1-24
-	dec a
-	cp 0                   ; if zero, no calc required
-	jr z, calc_sprite_x
-	ld b, a 
+	ld bc, &50 ; next line
 	
 .calc_sprite_y_work
-	push bc
-	ld bc, &50             ; next line
+	dec a
+	cp 0                   ; if zero, no calc required
+	jr z, calc_sprite_x    ; ... so go to the x
 	add hl, bc
-	pop bc
-	djnz calc_sprite_y_work     ; dec b, goto x loop if not zero
+	jp calc_sprite_y_work     ; goto top of loop
 	
 .calc_sprite_x
 	ld a, (sprite_user_x)
+	ld bc, &4             ; next character (8 pixels, 4 bytes)
+	
+.calc_sprite_x_work
 	dec a
 	cp 0
 	jr z, calc_sprite_pos_done
-	ld b, a ; 1-20
-	
-.calc_sprite_x_work
-	push bc
-	ld bc, &4             ; next character (8 pixels, 4 bytes)
 	add hl, bc
-	pop bc
-	djnz calc_sprite_x_work ; dec B, if not zero, go again!
+	jp calc_sprite_x_work ; go again!
 	
 .calc_sprite_pos_done
 	ld (spritescreenmemloc), hl
