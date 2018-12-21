@@ -1,6 +1,7 @@
-	;; Paul's sprite stuff!
-	;; Uses RSXs
-
+	; -------------------------------------------
+	; Paul's Z80 CPC Sprite Routine
+	; Includes RSXs to use from Locomotive BASIC
+	; -------------------------------------------
 
 	org &8000
 	
@@ -19,8 +20,8 @@
 
 .jump_table
 	defw name_table      ;address pointing to RSX commands 
-	jp RSX_GET           ;routine for COMMAND1 RSX
-	jp RSX_PUT           ;routine for COMMAND2 RSX
+	jp RSX_GET           ;routine for |GET RSX
+	jp RSX_PUT           ;routine for |PUT RSX
 
 	;; the table of RSX function names
 	;; the names must be in capitals.
