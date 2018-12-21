@@ -44,16 +44,13 @@
 
 	push hl               ; remember start position
 
-	call get_copy_loop    ; first 7 rows
-	call get_copy_noloop  ; first 8th row
+	call get_copy_loop    ; first 8 rows
 
 	ld bc, &50            ; delta to top of next character
 	pop hl                ; get start original location
 	add hl, bc            ; change hl to top of lower character position
 
-	call get_copy_loop    ; second 7 rows
-	jp get_copy_noloop    ; last row (jp to save an instruction)
-	ret
+	;jp get_copy_loop      ; second 8 rows (jp not needed as it's the next line)
 
 .get_copy_loop        	  ; main loop to copy from screen to RAM
 	ld b, 7               ; do this 7 times
@@ -68,7 +65,6 @@
 	add hl, bc            ; go to start of next line on screen
 	pop bc
 	djnz get_copy_loop_work ; do loop until b = 0
-	ret
 
 .get_copy_noloop
 	ldi                   ; do four copies in a row  (HL into DE)
@@ -101,7 +97,6 @@
 	push de               ; remember start video position
 
 	call put_copy_loop
-	call put_copy_noloop
 
 	pop de               ; get original video ram location
 	ex de, hl            ; HL now screen memory, DE now sprite memory
@@ -109,10 +104,7 @@
 	add hl, bc
 	ex de, hl            ; HL now sprite and DE now screen
 
-	call put_copy_loop
-	jp put_copy_noloop
-
-	ret
+	;jp put_copy_loop    ; Don't need to jp now to do next 8 lines
 
 .put_copy_loop
 	ld b, 7               ; do this 7 times
@@ -129,7 +121,6 @@
 	ex de, hl       ; HL now sprite and DE now screen
 	pop bc
 	djnz put_copy_loop_work ; do loop until b = 0
-	ret
 
 .put_copy_noloop
 	ldi
