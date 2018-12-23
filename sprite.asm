@@ -89,46 +89,35 @@
 	
 	ld b, (IX+4)          ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
 	call CALC_SPRITE_MEM  ; calc sprite data location
-	call CALC_SPRITE_SCREEN ; calc sprite screen location
+	call CALC_SPRITE_SCREEN ; calc sprite screen location (value in HL and posted to memory)
+	; DE contains X offset.... HL is start of screen memory
 	
+	ex de, hl				; put calc screen memory location into DE
 	ld hl, (spritememloc) ; put HL at start of sprite memory
-	ld de, (spritescreenmemloc) ; put DE at start position of screen memory
-
-	push de               ; remember start video position
-
-	call put_copy_loop
-
-	pop de               ; get original video ram location
-	ex de, hl            ; HL now screen memory, DE now sprite memory
-	ld bc, &50
-	add hl, bc
-	ex de, hl            ; HL now sprite and DE now screen
-
-	;jp put_copy_loop    ; Don't need to jp now to do next 8 lines
 
 .put_copy_loop
-	ld b, 7               ; do this 7 times
-	
+	ld b, 16
+	 
 .put_copy_loop_work
 	ldi
 	ldi
 	ldi
 	ldi
-	push bc         ; remember b
-	ex de, hl       ; HL now screen memory, DE now sprite memory
-	ld bc, &7FC     ; next line
-	add hl, bc
-	ex de, hl       ; HL now sprite and DE now screen
-	pop bc
-	djnz put_copy_loop_work ; do loop until b = 0
-
-.put_copy_noloop
-	ldi
-	ldi
-	ldi
-	ldi
+	
+	djnz put_copy_next_line
 	ret
-
+	
+.put_copy_next_line			; This works out where the next line should go in memory
+	push hl					; but because we're using the lookup table every time
+	ld hl, (sprite_user_y)	; the speed might not be the greatest any more :-/ 
+	inc hl					; But the "missing line" issue is eradicated!!
+	ld (sprite_user_y), hl
+	
+	call CALC_SPRITE_SCREEN
+	ex de, hl
+	pop hl
+	jp put_copy_loop_work ; back to top of loop [150 = 10 * 15] = 364
+	
 	; ---------------------------------------------------------------------------	
 
 .ERRORCONDITION
