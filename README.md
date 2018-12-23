@@ -17,12 +17,13 @@ This will copy an 8x16 block, starting at the uppermost-left corner of the scree
 This will paste a copy of the sprite with the given number at the co-ordinates given. X co-ordinates are 1-80 (160 pixels in `MODE 0`, can anchor to every second pixel due to screen memory) Y co-ordinates are 1-200, 1 being the top line.
 
 ## Limitations
-The functions currently only work in the CPC's `MODE 0` resolution. This is due to the way the system's video memory works. See the [CPCTelera Website](http://lronaldo.github.io/cpctelera/files/sprites/cpct_drawSprite-asm.html)
+* The functions currently only work in the CPC's `MODE 0` resolution. This is due to the way the system's video memory works. See the [CPCTelera Website](http://lronaldo.github.io/cpctelera/files/sprites/cpct_drawSprite-asm.html)
+* Don't try to position the sprite so it needs to paint outside the screen boundaries as this will cause (at best) odd video effects, or (at worst) crashes
 
 ## Bugs
-* There is currently an issue with some lines of the completed sprite not being painted as expected in certain cases.
+* None known
 
 ## To-do
 * Optimise the code further for speed
-* Labels in the assembler to allow better direct calling from 
+* Labels in the assembler to allow better direct calling from other assembler code
 * Change 8x16 blocks to 16x16 blocks for tiles, and include 8x8 sprite option
