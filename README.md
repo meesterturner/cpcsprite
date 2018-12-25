@@ -27,3 +27,4 @@ This will paste a copy of the sprite with the given number at the co-ordinates g
 * Optimise the code further for speed
 * Labels in the assembler to allow better direct calling from other assembler code
 * Change 8x16 blocks to 16x16 blocks for tiles, and include 8x8 sprite option
+* Run `BUILD_SCREEN_LINE_LOOKUP` routine automatically only if required during Get/Put calls, rather than at initialisation of RSXs
