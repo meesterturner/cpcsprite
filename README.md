@@ -19,6 +19,7 @@ This will paste a copy of the sprite with the given number at the co-ordinates g
 ## Limitations
 * The functions currently only work in the CPC's `MODE 0` resolution. This is due to the way the system's video memory works. See the [CPCTelera Website](http://lronaldo.github.io/cpctelera/files/sprites/cpct_drawSprite-asm.html)
 * Don't try to position the sprite so it needs to paint outside the screen boundaries as this will cause (at best) odd video effects, or (at worst) crashes
+* Limited to 8x16 `MODE 0` sprites 
 
 ## Bugs
 * None known
@@ -26,5 +27,4 @@ This will paste a copy of the sprite with the given number at the co-ordinates g
 ## To-do
 * Optimise the code further for speed
 * Labels in the assembler to allow better direct calling from other assembler code
-* Change 8x16 blocks to 16x16 blocks for tiles, and include 8x8 sprite option
 * Run `BUILD_SCREEN_LINE_LOOKUP` routine automatically only if required during Get/Put calls, rather than at initialisation of RSXs

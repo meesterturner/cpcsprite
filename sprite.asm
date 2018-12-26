@@ -87,14 +87,16 @@
     ld b, (IX+4)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
     call CALC_SPRITE_MEM            ; calc sprite data location
     call CALC_SPRITE_SCREEN         ; calc sprite screen location (value in HL and posted to memory)
-    ; DE contains X offset.... HL is start of screen memory
     
+    call FIND_ROW_GROUP_BOUNDARY
+                                    ; DE contains X offset.... HL is start of screen memory
     ex de, hl                       ; put calc screen memory location into DE
     ld hl, (spritememloc)           ; put HL at start of sprite memory
 
 .put_copy_loop
     ld b, 16
-     
+    ld a, (sprite_user_y)           ; need A to contain current line number
+
 .put_copy_loop_work
     ldi
     ldi
@@ -105,15 +107,33 @@
     ret
     
 .put_copy_next_line                 ; This works out where the next line should go in memory
-    push hl                         ; but because we're using the lookup table every time
-    ld hl, (sprite_user_y)          ; the speed might not be the greatest any more :-/ 
-    inc hl                          ; But the "missing line" issue is eradicated!!
-    ld (sprite_user_y), hl
+    inc a
+.put_copy_compare                   ; sneaky self-modifying code for speed (put_copy_compare + 1)
+    cp 255                          ; is it a boundary line?
+    jp z, put_calc_next_line        ; yep, it is, jump to firmware call
+                                    ; else manually add &7FC to current location
+    ex de, hl                       ; swap DE & HL so DE is *temp* sprite memory, HL is *temp* screen                           
+    push de
+    ld de, &7FC
+    add hl, de
+    pop de
+    ex de, hl                       ; Swap DE & HL back (DE screen, HL sprite memory)
+    jp put_copy_loop_work           ; back to top of loop
     
-    call CALC_SPRITE_SCREEN
-    ex de, hl
-    pop hl
-    jp put_copy_loop_work           ; back to top of loop [150 = 10 * 15] = 364
+.put_calc_next_line
+    ex de, hl                       ; swap DE & HL so DE is *temp* sprite memory, HL is *temp* screen
+    dec hl
+    dec hl
+    dec hl
+    dec hl
+    push af
+    call &BC26                      ; use firmware call to find next line
+    ld a, (put_copy_compare + 1)    ; just in case we cross another boundary...
+    add a, 8
+    ld (put_copy_compare + 1), a
+    pop af
+    ex de, hl                       ; Swap DE & HL back (DE screen, HL sprite memory)
+    jp put_copy_loop_work           ; back to top of loop
     
     ; ---------------------------------------------------------------------------   
 
@@ -208,7 +228,36 @@
     ld bc, &50
     add hl, bc                      ; go to start of next block
     jr build_screen_block
-
+    
+    ; ---------------------------------------------------------------------------
+.FIND_ROW_GROUP_BOUNDARY            ; Used when putting across character line boundaries
+    push de
+    push hl
+    ld de, (sprite_user_y)          ; E should contain pixel line
+    ld hl, spritelineboundarylookup
+.find_boundary_loop_work
+    ld a, (hl)                      ; Load line from table
+    cp e                            ; ... compare it to the line we want
+    jp z, ignore_this_boundary      ; If it matches, ignore it
+    jp c, ignore_this_boundary      ; if <, then ignore it
+    
+.store_line_boundary
+    ld (put_copy_compare + 1), a
+    pop hl
+    pop de
+    ret
+    
+.ignore_this_boundary               
+    inc hl
+    jp find_boundary_loop_work
+    
+.spritelineboundarylookup
+    defb 9, 17, 25, 33, 41, 49, 57, 65, 73, 81
+    defb 89, 97, 105, 113, 121, 129, 137, 145, 153, 161
+    defb 169, 177, 185, 193, 201
+    
+    ; ---------------------------------------------------------------------------
+    
 .spritelinelookup
     defs 400                        ; 200 lines x 16 bit address
     ; ---------------------------------------------------------------------------
