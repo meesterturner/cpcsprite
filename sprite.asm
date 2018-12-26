@@ -152,7 +152,7 @@
     
     ; ---------------------------------------------------------------------------
 
-.CALC_SPRITE_MEM                    ; sprite number in B (1-255) / returns via HL
+.CALC_SPRITE_MEM                    ; sprite number in A (1-255) / returns via HL
     ld hl, spritespace
     ld de, 64
     
