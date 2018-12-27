@@ -86,7 +86,7 @@
     ld a, (IX+4)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
     call CALC_SPRITE_MEM            ; calc sprite data location
     push hl                         ; remember this data location....
-    call CALC_SPRITE_SCREEN         ; calc sprite screen location (value in HL and posted to memory)
+    call CALC_SPRITE_SCREEN         ; calc sprite screen location (value in HL)
     
     call FIND_ROW_GROUP_BOUNDARY    ; After this, DE contains Y offset.... HL is start of screen memory
     ld a, e                         ; Get Y offset back into A (need A to contain current line number)
@@ -121,15 +121,15 @@
     
 .put_calc_next_line
     ex de, hl                       ; swap DE & HL so DE is *temp* sprite memory, HL is *temp* screen
-    dec hl
-    dec hl
-    dec hl
-    dec hl
+    ld l, a                         ; Next line number into L
+    ld h, 0                         ; Zero H
     push af
-    call &BC26                      ; use firmware call to find next line
+    push de
+    call CALC_SPRITE_SCREEN_HL      ; Returns using HL
     ld a, (put_copy_compare + 1)    ; just in case we cross another boundary...
     add a, 8
     ld (put_copy_compare + 1), a
+    pop de
     pop af
     ex de, hl                       ; Swap DE & HL back (DE screen, HL sprite memory)
     jp put_copy_loop_work           ; back to top of loop
@@ -167,6 +167,7 @@
 .CALC_SPRITE_SCREEN                 ; With help from http://cpctech.cpc-live.com/docs/scraddr.html
 .sprite_user_y                      ; input for y position (pixels [1-200]) - Self Modifying (sprite_user_y + 1)
     ld hl, &FFFF                    ; 1-200
+.CALC_SPRITE_SCREEN_HL              ; Label to skip above line
     dec hl                          ; decrease by one
     add hl, hl                      ; multiply by two to get the correct offset in the lookup
     ld de, spritelinelookup         ; add in position of the lookup table
