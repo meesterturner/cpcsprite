@@ -221,8 +221,8 @@
 .find_boundary_loop_work
     ld a, (hl)                      ; Load line from table
     cp e                            ; ... compare it to the line we want
-    jp z, ignore_this_boundary      ; If a = e, then ignore it
     jp c, ignore_this_boundary      ; if a < e, then ignore it
+    jp z, ignore_this_boundary      ; If a = e, then ignore it
     
 .store_line_boundary
     ld (put_copy_compare + 1), a
