@@ -77,25 +77,24 @@
     
     ld L, (IX+0)
     ld H, (IX+1)
-    ld (sprite_user_y), HL
+    ld (sprite_user_y + 1), HL
     
     ld L, (IX+2)
     ld H, (IX+3)
-    ld (sprite_user_x), HL
+    ld (sprite_user_x + 1), HL
     
     ld a, (IX+4)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
     call CALC_SPRITE_MEM            ; calc sprite data location
     push hl                         ; remember this data location....
     call CALC_SPRITE_SCREEN         ; calc sprite screen location (value in HL and posted to memory)
     
-    call FIND_ROW_GROUP_BOUNDARY
-                                    ; DE contains X offset.... HL is start of screen memory
+    call FIND_ROW_GROUP_BOUNDARY    ; After this, DE contains Y offset.... HL is start of screen memory
+    ld a, e                         ; Get Y offset back into A (need A to contain current line number)
     ex de, hl                       ; put calc screen memory location into DE
     pop hl                          ; get back sprite memory location into HL
 
 .put_copy_loop
     ld b, 16
-    ld a, (sprite_user_y)           ; need A to contain current line number
 
 .put_copy_loop_work
     ldi
@@ -164,13 +163,10 @@
     jp calc_add_loop_work           ; top of loop
     
     ; ---------------------------------------------------------------------------
-.sprite_user_x                      ; input for x position (pixels / 2 [1-80])
-    defs 2
-.sprite_user_y                      ; input for y position (pixels [1-200])
-    defs 2
     
 .CALC_SPRITE_SCREEN                 ; With help from http://cpctech.cpc-live.com/docs/scraddr.html
-    ld hl, (sprite_user_y)          ; 1-200
+.sprite_user_y                      ; input for y position (pixels [1-200]) - Self Modifying (sprite_user_y + 1)
+    ld hl, &FFFF                    ; 1-200
     dec hl                          ; decrease by one
     add hl, hl                      ; multiply by two to get the correct offset in the lookup
     ld de, spritelinelookup         ; add in position of the lookup table
@@ -180,8 +176,8 @@
     inc hl                          ; second into h, then a into l)
     ld h,(hl)
     ld l,a  
-    
-    ld de, (sprite_user_x)          ; add in x position(1-80)-1
+.sprite_user_x                      ; input for x position (pixels / 2 [1-80]) - Self Modifying (sprite_user_x + 1)
+    ld de, &ffff                    ; add in x position(1-80)-1
     add hl, de
     dec hl
     ret 
@@ -218,21 +214,19 @@
     jr build_screen_block
     
     ; ---------------------------------------------------------------------------
-.FIND_ROW_GROUP_BOUNDARY            ; Used when putting across character line boundaries
-    push de
+.FIND_ROW_GROUP_BOUNDARY            ; Used when putting across character line boundaries                
     push hl
-    ld de, (sprite_user_y)          ; E should contain pixel line
+    ld de, (sprite_user_y + 1)      ; E should contain pixel line
     ld hl, spritelineboundarylookup
 .find_boundary_loop_work
     ld a, (hl)                      ; Load line from table
     cp e                            ; ... compare it to the line we want
-    jp z, ignore_this_boundary      ; If it matches, ignore it
-    jp c, ignore_this_boundary      ; if <, then ignore it
+    jp z, ignore_this_boundary      ; If a = e, then ignore it
+    jp c, ignore_this_boundary      ; if a < e, then ignore it
     
 .store_line_boundary
     ld (put_copy_compare + 1), a
     pop hl
-    pop de
     ret
     
 .ignore_this_boundary               
