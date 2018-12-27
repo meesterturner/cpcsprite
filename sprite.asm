@@ -164,8 +164,6 @@
     jp calc_add_loop_work           ; top of loop
     
     ; ---------------------------------------------------------------------------
-.spritescreenmemloc                 ; output for where sprite will start
-    defs 2
 .sprite_user_x                      ; input for x position (pixels / 2 [1-80])
     defs 2
 .sprite_user_y                      ; input for y position (pixels [1-200])
@@ -186,7 +184,6 @@
     ld de, (sprite_user_x)          ; add in x position(1-80)-1
     add hl, de
     dec hl
-    ld (spritescreenmemloc), hl     ; return it through the memory location
     ret 
     
     ; ---------------------------------------------------------------------------
