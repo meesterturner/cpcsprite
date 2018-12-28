@@ -10,7 +10,7 @@
     org &8000
     
     ; -- INITIALISE LOOKUP TABLE BEFORE INSTALLING RSX
-    call BUILD_SCREEN_LINE_LOOKUP
+    call PSPRITE_BUILD_SCREEN_LINE_LOOKUP
     
     ; -- INSTALL RSXs
     ld hl,rsx_work_space            ; Address of a 4 byte workspace useable by Kernel
@@ -40,9 +40,13 @@
     cp 1                            ; Have we got 1 parameter (sprite number)
     jp nz, ERRORCONDITION           ; Exit if not
     ld a, (IX+0)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
+    ld de, &c000                    ; start position of sprite - default top left
+.PSPRITE_GET                        ; Z80 call point for GET. A contains sprite number, DE contains top-left screen memory location
+    push de
     call CALC_SPRITE_MEM            ; calc sprite location
+    pop de
     ex de, hl                       ; put sprite location into DE
-    ld hl, &c000                    ; start position of sprite - should be provided by something else
+    
 
     push hl                         ; remember start position
 
@@ -78,18 +82,21 @@
     ; ---------------------------------------------------------------------------
 
 .RSX_PUT
-    cp 3                            ; Have we got 3 parameters (sprite number, x char, y char)
+    cp 3                            ; Have we got 3 parameters (sprite number, x pixel *unit*, y pixel line)
     jp nz, ERRORCONDITION           ; Exit if not
     
-    ld L, (IX+0)
-    ld H, (IX+1)
-    ld (sprite_user_y + 1), HL
+    ld C, (IX+0)                    ; Y parameter into BC
+    ld B, (IX+1)
     
-    ld L, (IX+2)
+    ld L, (IX+2)                    ; X parameter into HL
     ld H, (IX+3)
-    ld (sprite_user_x + 1), HL
     
     ld a, (IX+4)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
+    
+.PSPRITE_PUT                        ; Z80 call to Put here. BC = y, HL = x, A = sprite number
+    ld (sprite_user_y + 1), BC
+    ld (sprite_user_x + 1), HL
+
     call CALC_SPRITE_MEM            ; calc sprite data location
     push hl                         ; remember this data location....
     call CALC_SPRITE_SCREEN         ; calc sprite screen location (value in HL)
@@ -101,7 +108,7 @@
 
 .put_copy_loop
     ld b, 16
-
+    ld c, 255                       ; Wierd fudge because ldi DECs BC, but don't want it to wreck the loop
 .put_copy_loop_work
     ldi
     ldi
@@ -148,6 +155,7 @@
     
     ld L, (IX+0)
     ld H, (IX+1)
+.PSPRITE_RELOCATE                   ; Label for Z80 call, put location into HL first.
     ld (spritespace_location + 1), HL
     ret
     
@@ -170,7 +178,7 @@
 
 .CALC_SPRITE_MEM                    ; sprite number in A (1-255) / returns via HL
 .spritespace_location               ; Put data in (spritespace_location + 1) to relocate
-    ld hl, spritespace
+    ld hl, SPRITE_DEFAULT_LOCATION
     ld de, 64
     
 .calc_add_loop_work
@@ -203,7 +211,7 @@
     
     ; ---------------------------------------------------------------------------
     
-.BUILD_SCREEN_LINE_LOOKUP
+.PSPRITE_BUILD_SCREEN_LINE_LOOKUP
     ld a, 25                        ; number of blocks
     ld hl, &c000                    ; start of screen memory
     ld ix, spritelinelookup         ; start of lookup table
@@ -255,5 +263,5 @@
     defs 400                        ; 200 lines x 16 bit address
     ; ---------------------------------------------------------------------------
     
-.spritespace                        ; blank space for sprites
+.SPRITE_DEFAULT_LOCATION                        ; blank space for sprites
     defs 4
