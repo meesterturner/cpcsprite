@@ -3,6 +3,10 @@
     ; Includes RSXs to use from Locomotive BASIC
     ; -------------------------------------------
 
+    SPRITE_DELTA_ROW_END    EQU &7FC
+    SPRITE_DELTA_ROW_START  EQU &800
+    SPRITE_DELTA_NEXT_CHAR  EQU &50
+    
     org &8000
     
     ; -- INITIALISE LOOKUP TABLE BEFORE INSTALLING RSX
@@ -22,10 +26,12 @@
     defw name_table                 ; Address pointing to RSX commands 
     jp RSX_GET                      ; Routine for |GET RSX
     jp RSX_PUT                      ; Routine for |PUT RSX
+    jp RSX_RELOCATE                 ; Routine for |RELOCATE RSX
 
 .name_table                         ; RSX Name Table
     defb "GE","T"+&80               ; The last letter of each RSX name must have bit 7 set to 1.
-    defb "PU","T"+&80               ; This is used by the Kernel to identify the end of the name.    
+    defb "PU","T"+&80               ; This is used by the Kernel to identify the end of the name.   
+    defb "RELOCAT", "E" + &80
     defb 0                          ; End of name table marker
 
     ; ---------------------------------------------------------------------------
@@ -42,7 +48,7 @@
 
     call get_copy_loop              ; first 8 rows
 
-    ld bc, &50                      ; delta to top of next character
+    ld bc, SPRITE_DELTA_NEXT_CHAR   ; delta to top of next character
     pop hl                          ; get start original location
     add hl, bc                      ; change hl to top of lower character position
 
@@ -57,7 +63,7 @@
     ldi
     ldi
     push bc                         ; remember b
-    ld bc, &7FC
+    ld bc, SPRITE_DELTA_ROW_END
     add hl, bc                      ; go to start of next line on screen
     pop bc
     djnz get_copy_loop_work         ; do loop until b = 0
@@ -113,7 +119,7 @@
                                     ; else manually add &7FC to current location
     ex de, hl                       ; swap DE & HL so DE is *temp* sprite memory, HL is *temp* screen                           
     push de
-    ld de, &7FC
+    ld de, SPRITE_DELTA_ROW_END
     add hl, de
     pop de
     ex de, hl                       ; Swap DE & HL back (DE screen, HL sprite memory)
@@ -136,6 +142,17 @@
     
     ; ---------------------------------------------------------------------------   
 
+.RSX_RELOCATE
+    cp 1                            ; Have we got 1 parameter (sprite relocate)
+    jp nz, ERRORCONDITION           ; Exit if not
+    
+    ld L, (IX+0)
+    ld H, (IX+1)
+    ld (spritespace_location + 1), HL
+    ret
+    
+    ; ---------------------------------------------------------------------------   
+        
 .ERRORCONDITION
     ld hl, errortext
 .errorcondition_text_loop
@@ -152,6 +169,7 @@
     ; ---------------------------------------------------------------------------
 
 .CALC_SPRITE_MEM                    ; sprite number in A (1-255) / returns via HL
+.spritespace_location               ; Put data in (spritespace_location + 1) to relocate
     ld hl, spritespace
     ld de, 64
     
@@ -201,7 +219,7 @@
     jp build_screen_next_block
 .build_screen_next_line
     push bc
-    ld bc, &800
+    ld bc, SPRITE_DELTA_ROW_START
     add hl, bc                      ; go to next pixel line
     pop bc
     jr build_screen_eight_work
@@ -210,7 +228,7 @@
     dec a
     cp 0
     ret z
-    ld bc, &50
+    ld bc, SPRITE_DELTA_NEXT_CHAR
     add hl, bc                      ; go to start of next block
     jr build_screen_block
     
