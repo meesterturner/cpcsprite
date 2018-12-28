@@ -16,6 +16,9 @@ This will copy an 8x16 block, starting at the uppermost-left corner of the scree
 `|put, <spritenumber>, <x>, <y>`
 This will paste a copy of the sprite with the given number at the co-ordinates given. X co-ordinates are 1-80 (160 pixels in `MODE 0`, can anchor to every second pixel due to screen memory) Y co-ordinates are 1-200, 1 being the top line.
 
+`|relocate, <memorylocation>`
+This will move the start of the sprite storage memory to the specified location. It does not copy or move any existing data. This could, for example, give you the ability to have multiple "banks" of sprites.
+
 ## Limitations
 * The functions currently only work in the CPC's `MODE 0` resolution. This is due to the way the system's video memory works. See the [CPCTelera Website](http://lronaldo.github.io/cpctelera/files/sprites/cpct_drawSprite-asm.html)
 * Don't try to position the sprite so it needs to paint outside the screen boundaries as this will cause (at best) odd video effects, or (at worst) crashes
