@@ -216,28 +216,20 @@
     
     ; ---------------------------------------------------------------------------
 .FIND_ROW_GROUP_BOUNDARY            ; Used when putting across character line boundaries                
-    push hl
     ld de, (sprite_user_y + 1)      ; E should contain pixel line
-    ld hl, spritelineboundarylookup
+    ld a, 9                         ; First value
 .find_boundary_loop_work
-    ld a, (hl)                      ; Load line from table
     cp e                            ; ... compare it to the line we want
     jp c, ignore_this_boundary      ; if a < e, then ignore it
     jp z, ignore_this_boundary      ; If a = e, then ignore it
     
 .store_line_boundary
     ld (put_copy_compare + 1), a
-    pop hl
     ret
     
 .ignore_this_boundary               
-    inc hl
+    add a, 8
     jp find_boundary_loop_work
-    
-.spritelineboundarylookup
-    defb 9, 17, 25, 33, 41, 49, 57, 65, 73, 81
-    defb 89, 97, 105, 113, 121, 129, 137, 145, 153, 161
-    defb 169, 177, 185, 193, 201
     
     ; ---------------------------------------------------------------------------
     
