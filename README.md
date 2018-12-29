@@ -10,8 +10,8 @@ The code will need compiling to memory location `&8000`. To use the RSXs, you th
 ### Locomotive BASIC
 The RSX commands are as follows:
 
-`|get, <spritenumber>`
-This will copy an 8x16 block, starting at the uppermost-left corner of the screen, into the sprite bank at the position specified by the sprite number.
+`|get, <spritenumber>`, `<startscreenaddress>`
+This will copy an 8x16 block, starting at the screen address specified, into the sprite bank at the position specified by the sprite number. At present, the top-left corner must be aligned to the top of a character block (e.g. pixel lines 1, 9, 17, etc)
 
 `|put, <spritenumber>, <x>, <y>`
 This will paste a copy of the sprite with the given number at the co-ordinates given. X co-ordinates are 1-80 (160 pixels in `MODE 0`, can anchor to every second pixel due to screen memory) Y co-ordinates are 1-200, 1 being the top line.
