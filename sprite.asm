@@ -37,10 +37,13 @@
     ; ---------------------------------------------------------------------------
 
 .RSX_GET                            ; Mode 0: 1 byte = 2 pixels (4 bytes = 8px) (32 bytes = 8x8, 64 = 8x16)
-    cp 1                            ; Have we got 1 parameter (sprite number)
+    cp 2                            ; Have we got 1 parameter (sprite number)
     jp nz, ERRORCONDITION           ; Exit if not
-    ld a, (IX+0)                    ; get 8 bit version of 16 bit parameter (IX+0 is LSB)
-    ld de, &c000                    ; start position of sprite - default top left
+    
+    ld e, (IX+0)                    ; Top left memory position of sprite in DE
+    ld d, (IX+1)
+    
+    ld a, (IX+2)                    ; get 8 bit version of 16 bit parameter (IX+2 is LSB)
 .PSPRITE_GET                        ; Z80 call point for GET. A contains sprite number, DE contains top-left screen memory location
     push de
     call CALC_SPRITE_MEM            ; calc sprite location
@@ -55,8 +58,6 @@
     ld bc, SPRITE_DELTA_NEXT_CHAR   ; delta to top of next character
     pop hl                          ; get start original location
     add hl, bc                      ; change hl to top of lower character position
-
-    ;jp get_copy_loop               ; second 8 rows (jp not needed as it's the next line)
 
 .get_copy_loop                      ; main loop to copy from screen to RAM
     ld b, 7                         ; do this 7 times
